@@ -1,0 +1,33 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
+
+# Virtual environments
+.venv/
+.venv-coreml/
+
+# Benchmark/parity outputs
+artifacts/
+
+# Checkpoints / weights
+*.pt
+*.pth
+*.ckpt
+
+# ONNX exports/artifacts
+*.onnx
+*.onnx.data
+
+# Local upstream checkout used for development (keep untracked here)
+EdgeTAM/
+
+# Local planning notes (not for public repo)
+docs/planning/
+
+# Keep only reference image + point text files in examples
+point_mask_examples/*
+!point_mask_examples/reference_image.JPG
+!point_mask_examples/*.txt

@@ -1,0 +1,7 @@
+image_path=reference_image.JPG
+image_width=2048
+image_height=1365
+prompt_count=2
+points:
+  1: label=1 x_norm=0.423501 y_norm=0.608819 x_px=867 y_px=831
+  2: label=1 x_norm=0.435050 y_norm=0.872312 x_px=891 y_px=1191
