@@ -50,11 +50,26 @@ def _bench(fn, warmup: int, runs: int) -> list[float]:
     return samples
 
 
+def _resolve_points_file(points_file: str | None, points_dir: str) -> Path:
+    """Resolve a points file path, falling back to the first `*.txt` in a directory."""
+    if points_file:
+        p = Path(points_file)
+        if not p.exists():
+            raise FileNotFoundError(f"Points file not found: {p}")
+        return p
+    candidate_dir = Path(points_dir)
+    txt_files = sorted(candidate_dir.glob("*.txt"))
+    if not txt_files:
+        raise FileNotFoundError(f"No .txt points files found in {candidate_dir}")
+    return txt_files[0]
+
+
 def main() -> int:
     """Run end-to-end and per-stage timing for split ONNX and PyTorch paths."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", default="point_mask_examples/reference_image.JPG")
-    parser.add_argument("--points-file", default="point_mask_examples/bad6-points.txt")
+    parser.add_argument("--points-file", default=None)
+    parser.add_argument("--points-dir", default="point_mask_examples")
     parser.add_argument("--size", type=int, default=1024)
     parser.add_argument("--max-points", type=int, default=4)
     parser.add_argument("--warmup", type=int, default=10)
@@ -65,7 +80,7 @@ def main() -> int:
     parser.add_argument("--split-image-onnx", default="edgetam_onnx/models/image_encoder.onnx")
     parser.add_argument("--split-prompt-onnx", default="edgetam_onnx/models/prompt_encoder.onnx")
     parser.add_argument("--split-mask-onnx", default="edgetam_onnx/models/mask_decoder.onnx")
-    parser.add_argument("--out", default="artifacts/benchmarks/split_vs_pytorch_bad6.json")
+    parser.add_argument("--out", default="artifacts/benchmarks/split_vs_pytorch.json")
     args = parser.parse_args()
 
     sam2_root = resolve_sam2_root(args.sam2_root)
@@ -74,7 +89,8 @@ def main() -> int:
     image = cv2.cvtColor(cv2.imread(args.image, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
     input_image = preprocess_image(image, size=args.size).astype(np.float32)
 
-    pts = _load_points_file(args.points_file, size=args.size)
+    points_file = _resolve_points_file(args.points_file, args.points_dir)
+    pts = _load_points_file(str(points_file), size=args.size)
     active = pts[: args.max_points]
     point_coords, point_labels = build_prompt_arrays(active, max_points=args.max_points, fixed_length=True)
     box_coords = np.zeros((1, 1, 4), dtype=np.float32)
@@ -175,7 +191,7 @@ def main() -> int:
     report = {
         "meta": {
             "image": args.image,
-            "points_file": args.points_file,
+            "points_file": str(points_file),
             "size": args.size,
             "max_points": args.max_points,
             "warmup": args.warmup,

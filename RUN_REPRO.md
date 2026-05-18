@@ -56,20 +56,17 @@ PYTHONPATH=. uv run python scripts/generate_split_masks.py \
 ```
 
 This creates new files like:
-- `point_mask_examples/bad1_split_new.png`
-- `point_mask_examples/bad4-points_split_new.png`
-- `point_mask_examples/bad5-points-*_split_new.png`
-- `point_mask_examples/bad6-points_split_new.png`
+- `point_mask_examples/<your-points-file-stem>_split_new.png`
 
 ## 3) Stage parity check vs PyTorch
 
 ```bash
 PYTHONPATH=. uv run python edgetam_onnx/validate/compare_pytorch_onnx.py \
   --image point_mask_examples/reference_image.JPG \
-  --points-file point_mask_examples/bad6-points.txt \
+  --points-file point_mask_examples/<your-points-file>.txt \
   --max-points 4 \
   --precision fp32 \
-  --out artifacts/onnx_split/compare_bad6_fp32.json
+  --out artifacts/onnx_split/compare_fp32.json
 ```
 
 ## 4) Benchmark split ONNX vs PyTorch
@@ -77,10 +74,10 @@ PYTHONPATH=. uv run python edgetam_onnx/validate/compare_pytorch_onnx.py \
 ```bash
 PYTHONPATH=. uv run python scripts/benchmark_split_vs_pytorch.py \
   --image point_mask_examples/reference_image.JPG \
-  --points-file point_mask_examples/bad6-points.txt \
+  --points-dir point_mask_examples \
   --size 1024 \
   --max-points 4 \
   --warmup 10 \
   --runs 50 \
-  --out artifacts/benchmarks/split_vs_pytorch_bad6.json
+  --out artifacts/benchmarks/split_vs_pytorch.json
 ```
