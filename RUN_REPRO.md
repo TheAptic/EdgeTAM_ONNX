@@ -7,14 +7,14 @@ Provide these locally before running:
 1. Upstream source checkout:
    - `./EdgeTAM/`
 2. Model checkpoint:
-   - `./model/edgetam.pt`
+   - `./EdgeTAM/checkpoints/edgetam.pt`
 3. Model config:
-   - `./model/edgetam.yaml`
+   - `./EdgeTAM/checkpoints/edgetam.yaml`
 
 Preflight check:
 
 ```bash
-test -d EdgeTAM && test -f model/edgetam.pt && test -f model/edgetam.yaml && echo "prereqs ok"
+test -d EdgeTAM && test -f EdgeTAM/checkpoints/edgetam.pt && test -f EdgeTAM/checkpoints/edgetam.yaml && echo "prereqs ok"
 ```
 
 ## 0) Environment setup (fresh clone / after cleanup)
@@ -40,9 +40,12 @@ PYTHONPATH=. python -m unittest tests.test_split_onnx_scaffold tests.test_onnx_p
 ## 1) Export split ONNX models
 
 ```bash
-PYTHONPATH=. uv run python edgetam_onnx/export/export_image_encoder.py
-PYTHONPATH=. uv run python edgetam_onnx/export/export_prompt_encoder.py --max-points 4
-PYTHONPATH=. uv run python edgetam_onnx/export/export_mask_decoder.py --max-points 4
+PYTHONPATH=. uv run python edgetam_onnx/export/export_image_encoder.py \
+  --config EdgeTAM/checkpoints/edgetam.yaml --checkpoint EdgeTAM/checkpoints/edgetam.pt
+PYTHONPATH=. uv run python edgetam_onnx/export/export_prompt_encoder.py --max-points 4 \
+  --config EdgeTAM/checkpoints/edgetam.yaml --checkpoint EdgeTAM/checkpoints/edgetam.pt
+PYTHONPATH=. uv run python edgetam_onnx/export/export_mask_decoder.py --max-points 4 \
+  --config EdgeTAM/checkpoints/edgetam.yaml --checkpoint EdgeTAM/checkpoints/edgetam.pt
 ```
 
 ## 2) Generate masks from point examples (no overwrite)
@@ -64,6 +67,8 @@ This creates new files like:
 PYTHONPATH=. uv run python edgetam_onnx/validate/compare_pytorch_onnx.py \
   --image point_mask_examples/reference_image.JPG \
   --points-file point_mask_examples/<your-points-file>.txt \
+  --config EdgeTAM/checkpoints/edgetam.yaml \
+  --checkpoint EdgeTAM/checkpoints/edgetam.pt \
   --max-points 4 \
   --precision fp32 \
   --out artifacts/onnx_split/compare_fp32.json
@@ -75,6 +80,8 @@ PYTHONPATH=. uv run python edgetam_onnx/validate/compare_pytorch_onnx.py \
 PYTHONPATH=. uv run python scripts/benchmark_split_vs_pytorch.py \
   --image point_mask_examples/reference_image.JPG \
   --points-dir point_mask_examples \
+  --config EdgeTAM/checkpoints/edgetam.yaml \
+  --checkpoint EdgeTAM/checkpoints/edgetam.pt \
   --size 1024 \
   --max-points 4 \
   --warmup 10 \

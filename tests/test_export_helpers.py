@@ -9,7 +9,7 @@ from scripts.export_edgetam_onnx import _sanitize_point_labels_for_onnx
 
 class ExportHelperTests(unittest.TestCase):
     def test_detects_filesystem_yaml_config(self):
-        self.assertTrue(_is_filesystem_config("model/edgetam.yaml"))
+        self.assertTrue(_is_filesystem_config("EdgeTAM/checkpoints/edgetam.yaml"))
         self.assertFalse(_is_filesystem_config(str(Path("/tmp/a.yaml"))))
 
     def test_detects_hydra_package_config(self):

@@ -11,9 +11,9 @@ To reproduce results, you must provide:
 1. Local `EdgeTAM` checkout at repo root:
    - `./EdgeTAM/`
 2. EdgeTAM checkpoint file (for example):
-   - `./model/edgetam.pt` (or a path you pass to export/validation scripts)
+   - `./EdgeTAM/checkpoints/edgetam.pt` (or a path you pass to export/validation scripts)
 3. EdgeTAM config file (for example):
-   - `./model/edgetam.yaml` (or a path you pass to export/validation scripts)
+   - `./EdgeTAM/checkpoints/edgetam.yaml` (or a path you pass to export/validation scripts)
 
 All split ONNX export and PyTorch parity scripts depend on these assets.
 
