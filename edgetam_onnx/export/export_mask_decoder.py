@@ -1,3 +1,5 @@
+"""CLI to export mask decoding stage for split ONNX runtime."""
+
 from __future__ import annotations
 
 import argparse
@@ -13,6 +15,7 @@ from edgetam_onnx.export.common import setup_sam2_import_path
 
 
 def main() -> int:
+    """Export mask decoder using representative embedding tensor shapes."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="model/edgetam.yaml")
     parser.add_argument("--checkpoint", default="model/edgetam.pt")

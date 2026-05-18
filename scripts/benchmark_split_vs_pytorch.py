@@ -1,3 +1,5 @@
+"""Benchmark split ONNX pipeline latency against PyTorch reference modules."""
+
 from __future__ import annotations
 
 import argparse
@@ -22,6 +24,7 @@ from scripts.prompt_inputs import build_prompt_arrays
 
 
 def _summary(samples_ms: list[float]) -> dict[str, float]:
+    """Aggregate latency samples into human-readable metrics."""
     arr = np.asarray(samples_ms, dtype=np.float64)
     return {
         "mean_ms": float(arr.mean()),
@@ -35,6 +38,7 @@ def _summary(samples_ms: list[float]) -> dict[str, float]:
 
 
 def _bench(fn, warmup: int, runs: int) -> list[float]:
+    """Benchmark callable latency in milliseconds after warmup iterations."""
     for _ in range(warmup):
         fn()
     samples = []
@@ -47,6 +51,7 @@ def _bench(fn, warmup: int, runs: int) -> list[float]:
 
 
 def main() -> int:
+    """Run end-to-end and per-stage timing for split ONNX and PyTorch paths."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", default="point_mask_examples/reference_image.JPG")
     parser.add_argument("--points-file", default="point_mask_examples/bad6-points.txt")

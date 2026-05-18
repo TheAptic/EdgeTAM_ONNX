@@ -1,3 +1,5 @@
+"""Generate mask previews from split ONNX exports and point prompt files."""
+
 from __future__ import annotations
 
 import argparse
@@ -14,6 +16,7 @@ from scripts.prompt_inputs import build_prompt_arrays
 
 
 def _unique_out_path(base: Path) -> Path:
+    """Avoid overwriting outputs by appending an incrementing numeric suffix."""
     if not base.exists():
         return base
     stem = base.stem
@@ -28,6 +31,7 @@ def _unique_out_path(base: Path) -> Path:
 
 
 def main() -> int:
+    """Run split ONNX inference for each point file and write mask images."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", default="point_mask_examples/reference_image.JPG")
     parser.add_argument("--points-dir", default="point_mask_examples")

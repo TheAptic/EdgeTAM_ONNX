@@ -1,4 +1,4 @@
-"""One-time exporter: SAM2-backed checkpoint -> ONNX for runtime without sam2."""
+"""Export a monolithic EdgeTAM ONNX graph from SAM2 config + checkpoint."""
 
 from __future__ import annotations
 
@@ -11,11 +11,13 @@ from typing import Any
 
 
 def _is_filesystem_config(config: str) -> bool:
+    """Return True when `config` is an existing local YAML path."""
     p = Path(config)
     return p.suffix in {".yaml", ".yml"} and p.exists()
 
 
 def _collect_targets(node: Any, out: list[str]) -> None:
+    """Collect Hydra `_target_` strings recursively for import preflight checks."""
     if isinstance(node, dict):
         target = node.get("_target_")
         if isinstance(target, str):
@@ -28,6 +30,7 @@ def _collect_targets(node: Any, out: list[str]) -> None:
 
 
 def _resolve_target(target: str) -> bool:
+    """Best-effort resolve a dotted object path without instantiating it."""
     parts = target.split(".")
     for i in range(len(parts), 0, -1):
         module_name = ".".join(parts[:i])
@@ -43,7 +46,7 @@ def _resolve_target(target: str) -> bool:
 
 
 def _sanitize_point_labels_for_onnx(point_labels, torch_module):
-    """Map labels to ONNX contract: 1=positive, 0=negative, -1=unused."""
+    """Map labels to ONNX contract: `1` foreground, `0` background, `-1` empty."""
     ones = torch_module.ones_like(point_labels)
     zeros = torch_module.zeros_like(point_labels)
     neg_one = torch_module.full_like(point_labels, -1)
@@ -55,6 +58,7 @@ def _sanitize_point_labels_for_onnx(point_labels, torch_module):
 
 
 def main() -> int:
+    """Export ONNX and validate that the local SAM2 checkout matches config targets."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="model/edgetam.yaml")
     parser.add_argument("--checkpoint", default="model/edgetam.pt")

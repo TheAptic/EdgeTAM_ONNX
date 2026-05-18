@@ -1,3 +1,5 @@
+"""Single-frame ONNX Runtime inference utilities for EdgeTAM exports."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -20,7 +22,7 @@ def preprocess_image(image: np.ndarray, size: int = 1024) -> np.ndarray:
 
 
 class EdgeTamOnnxRunner:
-    """Pure ONNX Runtime single-frame inference runner."""
+    """Run a single-frame EdgeTAM ONNX graph with optional point prompts."""
 
     def __init__(self, model_path: str, providers: list[Any] | None = None):
         self.session = ort.InferenceSession(
@@ -29,6 +31,7 @@ class EdgeTamOnnxRunner:
         )
 
     def _session_input_names(self) -> set[str]:
+        """Return input names once per call to handle model-variant contracts."""
         return {i.name for i in self.session.get_inputs()}
 
     def run_single_frame(
@@ -38,6 +41,11 @@ class EdgeTamOnnxRunner:
         point_coords: np.ndarray | None = None,
         point_labels: np.ndarray | None = None,
     ) -> dict[str, Any]:
+        """Execute one inference pass and return outputs keyed by ONNX name.
+
+        If the loaded model advertises point inputs, both `point_coords` and
+        `point_labels` are required.
+        """
         inp = preprocess_image(image, size=size)
         feed: dict[str, Any] = {"image": inp}
         input_names = self._session_input_names()

@@ -1,3 +1,5 @@
+"""Numerical parity checks between split ONNX outputs and PyTorch outputs."""
+
 from __future__ import annotations
 
 import argparse
@@ -21,6 +23,7 @@ from scripts.prompt_inputs import build_prompt_arrays
 
 
 def _stats(a: np.ndarray) -> dict[str, Any]:
+    """Return compact tensor statistics for diagnostics in parity reports."""
     return {
         "shape": list(a.shape),
         "dtype": str(a.dtype),
@@ -32,6 +35,7 @@ def _stats(a: np.ndarray) -> dict[str, Any]:
 
 
 def _compare(a: np.ndarray, b: np.ndarray, rtol: float, atol: float) -> dict[str, Any]:
+    """Compare tensors and return tolerance + error-distribution metadata."""
     diff = np.abs(a - b)
     ok = np.allclose(a, b, rtol=rtol, atol=atol)
     return {
@@ -47,6 +51,7 @@ def _compare(a: np.ndarray, b: np.ndarray, rtol: float, atol: float) -> dict[str
 
 
 def main() -> int:
+    """Run parity report generation and return non-zero if any tensor fails."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", required=True)
     parser.add_argument("--points-file", required=True)

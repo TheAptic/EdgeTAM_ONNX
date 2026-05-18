@@ -1,3 +1,5 @@
+"""CLI to export prompt encoding stage for split ONNX runtime."""
+
 from __future__ import annotations
 
 import argparse
@@ -13,6 +15,7 @@ from edgetam_onnx.export.common import setup_sam2_import_path
 
 
 def main() -> int:
+    """Export prompt encoder with static prompt slots for deployment stability."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="model/edgetam.yaml")
     parser.add_argument("--checkpoint", default="model/edgetam.pt")

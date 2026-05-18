@@ -1,3 +1,5 @@
+"""Prompt-wise parity harness for ONNX outputs against PyTorch reference."""
+
 from __future__ import annotations
 
 import argparse
@@ -17,6 +19,7 @@ from scripts.prompt_inputs import build_prompt_arrays
 
 
 def _overlay(image: np.ndarray, mask: np.ndarray, prompts: list[tuple[int, int, int]]) -> np.ndarray:
+    """Render a lightweight diagnostic overlay for visual parity inspection."""
     out = image.copy()
     if mask.ndim == 3:
         mask = mask.squeeze()
@@ -32,10 +35,12 @@ def _overlay(image: np.ndarray, mask: np.ndarray, prompts: list[tuple[int, int, 
 
 
 def _resize_image(image: np.ndarray, size: int) -> np.ndarray:
+    """Resize to square model input while preserving uint8 RGB representation."""
     return np.asarray(Image.fromarray(image).resize((size, size), Image.BILINEAR), dtype=np.uint8)
 
 
 def _iou(a: np.ndarray, b: np.ndarray) -> float:
+    """Compute binary mask IoU with an all-empty special case of `1.0`."""
     aa = (a > 0).astype(np.uint8)
     bb = (b > 0).astype(np.uint8)
     inter = int((aa & bb).sum())
@@ -46,6 +51,7 @@ def _iou(a: np.ndarray, b: np.ndarray) -> float:
 
 
 def _tensor_stats(arr: np.ndarray) -> dict[str, Any]:
+    """Return compact stats used in exported parity reports."""
     a = np.asarray(arr, dtype=np.float32)
     return {
         "shape": list(a.shape),
@@ -58,6 +64,7 @@ def _tensor_stats(arr: np.ndarray) -> dict[str, Any]:
 
 
 def _load_edge_mask(mask_path: str, size: int) -> np.ndarray:
+    """Load optional ground-truth mask and normalize to binary uint8."""
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
     if mask is None:
         raise FileNotFoundError(f"Failed to read edge mask: {mask_path}")
@@ -76,6 +83,7 @@ _POINT_NORM_LINE_RE = re.compile(
 
 
 def _load_points_file(points_file: str, size: int) -> list[tuple[int, int, int]]:
+    """Parse prompt points from percent-based or normalized text formats."""
     points: list[tuple[int, int, int]] = []
     content = Path(points_file).read_text().splitlines()
     for line in content:
@@ -134,6 +142,7 @@ def _foreground_mask_from_logits(
 
 
 def _point_in_mask(mask: np.ndarray, x: int, y: int) -> int:
+    """Safe mask lookup that returns `0` for out-of-bounds probe points."""
     h, w = mask.shape[-2:]
     if x < 0 or y < 0 or x >= w or y >= h:
         return 0
@@ -141,6 +150,7 @@ def _point_in_mask(mask: np.ndarray, x: int, y: int) -> int:
 
 
 def _default_scenarios(size: int) -> list[dict[str, Any]]:
+    """Build fallback scenario set when no external point file is provided."""
     c = size // 2
     return [
         {"name": "single_positive_center", "points": [(c, c, 1)]},
@@ -161,6 +171,7 @@ def _default_scenarios(size: int) -> list[dict[str, Any]]:
 
 
 def _scenarios_from_points(points: list[tuple[int, int, int]]) -> list[dict[str, Any]]:
+    """Create progression scenarios from parsed point files for reproducible runs."""
     positives = [p for p in points if p[2] > 0]
     scenarios: list[dict[str, Any]] = []
     if positives:
@@ -170,6 +181,7 @@ def _scenarios_from_points(points: list[tuple[int, int, int]]) -> list[dict[str,
 
 
 def _build_torch_runner(config: str, checkpoint: str, sam2_root: Path):
+    """Create minimal torch runner exposing logits for a single frame."""
     sys.path.insert(0, str(sam2_root))
     import torch
     from hydra import compose
@@ -209,6 +221,7 @@ def _build_torch_runner(config: str, checkpoint: str, sam2_root: Path):
 
 
 def main() -> int:
+    """Run parity scenarios, export overlays, and write JSON/CSV summary artifacts."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", required=True)
     parser.add_argument("--onnx", required=True)

@@ -1,9 +1,12 @@
+"""Scaffold CLI entrypoint for future video/runtime integration."""
+
 from __future__ import annotations
 
 import argparse
 
 
 def main() -> int:
+    """Print integration guidance until the runtime loop is implemented."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--note", default="Runtime runner scaffold only")
     args = parser.parse_args()

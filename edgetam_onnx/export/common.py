@@ -1,3 +1,5 @@
+"""Shared export helpers used by split and monolithic ONNX pipelines."""
+
 from __future__ import annotations
 
 import importlib
@@ -8,6 +10,7 @@ from typing import Any
 
 
 def resolve_sam2_root(explicit_root: str | None) -> Path:
+    """Resolve the SAM2/EdgeTAM source root used for model construction."""
     project_root = Path(__file__).resolve().parents[2]
     default_root = project_root / "EdgeTAM" if (project_root / "EdgeTAM").exists() else project_root / "sam2"
     sam2_root = Path(explicit_root) if explicit_root else default_root
@@ -17,6 +20,7 @@ def resolve_sam2_root(explicit_root: str | None) -> Path:
 
 
 def ensure_export_deps() -> None:
+    """Fail fast when mandatory export dependencies are unavailable."""
     missing = []
     if importlib.util.find_spec("torch") is None:
         missing.append("torch")
@@ -27,10 +31,16 @@ def ensure_export_deps() -> None:
 
 
 def setup_sam2_import_path(sam2_root: Path) -> None:
+    """Prepend the local SAM2 checkout so imports resolve to project sources."""
     sys.path.insert(0, str(sam2_root))
 
 
 def load_model(config: str, checkpoint: str, allow_backbone_download: bool = False):
+    """Instantiate the PyTorch model from config and checkpoint.
+
+    By default this forces backbone construction without pretrained downloads so
+    export runs are reproducible in offline environments.
+    """
     import torch
     from hydra import compose
     from hydra.utils import instantiate
@@ -43,6 +53,7 @@ def load_model(config: str, checkpoint: str, allow_backbone_download: bool = Fal
             original_create_model = timm_backbone_mod.create_model
 
             def _offline_create_model(*model_args, **model_kwargs):
+                """Disable implicit timm weight downloads during export setup."""
                 model_kwargs["pretrained"] = False
                 return original_create_model(*model_args, **model_kwargs)
 
@@ -64,6 +75,7 @@ def load_model(config: str, checkpoint: str, allow_backbone_download: bool = Fal
 
 
 def _patch_prompt_encoder_for_onnx(torch_module) -> None:
+    """Patch SAM2 prompt encoder branches that are fragile for ONNX tracing."""
     try:
         prompt_mod = importlib.import_module("sam2.modeling.sam.prompt_encoder")
         PromptEncoder = prompt_mod.PromptEncoder
@@ -128,6 +140,7 @@ def _patch_prompt_encoder_for_onnx(torch_module) -> None:
 
 
 def sanitize_point_labels_for_onnx(point_labels, torch_module):
+    """Map labels to ONNX contract: `1` foreground, `0` background, `-1` empty."""
     ones = torch_module.ones_like(point_labels)
     zeros = torch_module.zeros_like(point_labels)
     neg_one = torch_module.full_like(point_labels, -1)
@@ -139,6 +152,8 @@ def sanitize_point_labels_for_onnx(point_labels, torch_module):
 
 
 class EdgeTAMImageEncoderExport:
+    """Wrapper exposing only image-encoder outputs needed by split runtime."""
+
     def __init__(self, sam_model):
         import torch
 
@@ -164,6 +179,8 @@ class EdgeTAMImageEncoderExport:
 
 
 class EdgeTAMPromptEncoderExport:
+    """Wrapper exposing prompt embeddings for split runtime execution."""
+
     def __init__(self, sam_model):
         import torch
 
@@ -187,6 +204,8 @@ class EdgeTAMPromptEncoderExport:
 
 
 class EdgeTAMMaskDecoderExport:
+    """Wrapper that runs mask decoding from cached image/prompt embeddings."""
+
     def __init__(self, sam_model):
         import torch
 
